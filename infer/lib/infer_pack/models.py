@@ -69,7 +69,9 @@ class TextEncoder(nn.Module):
         x_mask = torch.unsqueeze(commons.sequence_mask(lengths, x.size(2)), 1).to(
             x.dtype
         )
-        x = self.encoder(x * x_mask, x_mask, block_length_override=block_length_override)
+        x = self.encoder(
+            x * x_mask, x_mask, block_length_override=block_length_override
+        )
         if skip_head is not None:
             assert isinstance(skip_head, torch.Tensor)
             head = int(skip_head.item())
@@ -747,16 +749,24 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         pitch: torch.Tensor,
         lengths: torch.Tensor,
         skip_head: Optional[torch.Tensor] = None,
-        block_length_override: Optional[int] = None
+        block_length_override: Optional[int] = None,
     ):
         if hasattr(self, "enc_p2"):
-            m_p, logs_p, x_mask = self.enc_p(phone, pitch, lengths, block_length_override=block_length_override)
+            m_p, logs_p, x_mask = self.enc_p(
+                phone, pitch, lengths, block_length_override=block_length_override
+            )
             x = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             x = self.flow(x, x_mask, g=g, reverse=True)
             x = torch.transpose(x, 1, -1)
             return self.enc_p2(x, pitch, lengths, skip_head)
         else:
-            return self.enc_p(phone, pitch, lengths, skip_head, block_length_override=block_length_override)
+            return self.enc_p(
+                phone,
+                pitch,
+                lengths,
+                skip_head,
+                block_length_override=block_length_override,
+            )
 
     @torch.jit.ignore
     def forward(
@@ -808,7 +818,9 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         block_length_override: Optional[int] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
-        m_p, logs_p, x_mask = self.call_enc_p(g, phone, pitch, phone_lengths, block_length_override=block_length_override)
+        m_p, logs_p, x_mask = self.call_enc_p(
+            g, phone, pitch, phone_lengths, block_length_override=block_length_override
+        )
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
         if not hasattr(self, "enc_p2"):
             z = self.flow(z_p, x_mask, g=g, reverse=True)
@@ -850,7 +862,12 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
             flow_head = torch.clamp(skip_head - 24, min=0)
             dec_head = head - int(flow_head.item())
             m_p, logs_p, x_mask = self.call_enc_p(
-                g, phone, pitch, phone_lengths, flow_head, block_length_override=block_length_override
+                g,
+                phone,
+                pitch,
+                phone_lengths,
+                flow_head,
+                block_length_override=block_length_override,
             )
             z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             if not hasattr(self, "enc_p2"):
@@ -861,7 +878,13 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
             x_mask = x_mask[:, :, dec_head : dec_head + length]
             nsff0 = nsff0[:, head : head + length]
         else:
-            m_p, logs_p, x_mask = self.call_enc_p(g, phone, pitch, phone_lengths, block_length_override=block_length_override)
+            m_p, logs_p, x_mask = self.call_enc_p(
+                g,
+                phone,
+                pitch,
+                phone_lengths,
+                block_length_override=block_length_override,
+            )
             z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             if not hasattr(self, "enc_p2"):
                 z = self.flow(z_p, x_mask, g=g, reverse=True)

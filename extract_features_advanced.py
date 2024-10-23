@@ -152,11 +152,11 @@ for i in range(len(vc_list)):
                 if vc_name is None:
                     audio = load_audio(wav_path, 16000)
                 else:
-#                    f0 = add_noise(
-#                        pitch_blur(compute_f0(wav_path)),
-#                        amp=random.uniform(0, 20),
-#                        scale=random.randint(3, 10),
-#                    )
+                    #                    f0 = add_noise(
+                    #                        pitch_blur(compute_f0(wav_path)),
+                    #                        amp=random.uniform(0, 20),
+                    #                        scale=random.randint(3, 10),
+                    #                    )
                     f0 = compute_f0(wav_path)
                     f0 = f0 * (2 ** ((shift - random.uniform(0, 3)) / 12))
                     f0 = np.pad(f0, (300, 300))

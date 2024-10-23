@@ -66,7 +66,9 @@ class Encoder(nn.Module):
             self.attn_layers, self.norm_layers_1, self.ffn_layers, self.norm_layers_2
         )
         for attn_layers, norm_layers_1, ffn_layers, norm_layers_2 in zippep:
-            y = attn_layers(x, x, attn_mask, block_length_override=block_length_override)
+            y = attn_layers(
+                x, x, attn_mask, block_length_override=block_length_override
+            )
             y = self.drop(y)
             x = norm_layers_1(x + y)
 
@@ -218,13 +220,19 @@ class MultiHeadAttention(nn.Module):
                 self.conv_k.bias.copy_(self.conv_q.bias)
 
     def forward(
-        self, x: torch.Tensor, c: torch.Tensor, attn_mask: Optional[torch.Tensor] = None, block_length_override: Optional[int] = None,
+        self,
+        x: torch.Tensor,
+        c: torch.Tensor,
+        attn_mask: Optional[torch.Tensor] = None,
+        block_length_override: Optional[int] = None,
     ):
         q = self.conv_q(x)
         k = self.conv_k(c)
         v = self.conv_v(c)
 
-        x, _ = self.attention(q, k, v, mask=attn_mask, block_length_override=block_length_override)
+        x, _ = self.attention(
+            q, k, v, mask=attn_mask, block_length_override=block_length_override
+        )
 
         x = self.conv_o(x)
         return x
@@ -235,7 +243,7 @@ class MultiHeadAttention(nn.Module):
         key: torch.Tensor,
         value: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        block_length_override: Optional[int] =None,
+        block_length_override: Optional[int] = None,
     ):
         # reshape [b, d, t] -> [b, n_h, t, d_k]
         b, d, t_s = key.size()
@@ -262,15 +270,17 @@ class MultiHeadAttention(nn.Module):
             )
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e4)
-            block_length = self.block_length if block_length_override is None else block_length_override
+            block_length = (
+                self.block_length
+                if block_length_override is None
+                else block_length_override
+            )
             if block_length is not None:
                 assert (
                     t_s == t_t
                 ), "Local attention is only available for self-attention."
                 block_mask = (
-                    torch.ones_like(scores)
-                    .triu(-block_length)
-                    .tril(block_length)
+                    torch.ones_like(scores).triu(-block_length).tril(block_length)
                 )
                 scores = scores.masked_fill(block_mask == 0, -1e4)
         p_attn = F.softmax(scores, dim=-1)  # [b, n_h, t_t, t_s]

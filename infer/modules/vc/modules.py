@@ -234,7 +234,7 @@ class VC:
         if block_length_override_ == 0:
             block_length_override = None
         else:
-            block_length_override=int(round(block_length_override_ * 100))
+            block_length_override = int(round(block_length_override_ * 100))
 
         if f0_invert_axis != " ":
             notes = [
